@@ -2,6 +2,7 @@ package githubapi
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/google/go-github/v55/github"
 )
@@ -12,26 +13,49 @@ type GithubClient struct {
 	token   string
 }
 
+// tokenTransport injects an Authorization header with a static token
+type tokenTransport struct {
+	Token string
+	Base  http.RoundTripper
+}
+
+func (t *tokenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	clone := req.Clone(req.Context())
+	if t.Token != "" {
+		clone.Header.Set("Authorization", "token "+t.Token)
+	}
+	base := t.Base
+	if base == nil {
+		base = http.DefaultTransport
+	}
+	return base.RoundTrip(clone)
+}
+
 func NewClient(token string) *GithubClient {
+	httpClient := &http.Client{Transport: &tokenTransport{Token: token}}
 	return &GithubClient{
 		BaseURL: "https://api.github.com",
-		Client:  github.NewClient(nil),
+		Client:  github.NewClient(httpClient),
 		token:   token,
 	}
 }
 
-func (c *GithubClient) GetRepoFiles(owner, repo, path string) []*github.RepositoryContent {
-	files, _, err := c.Client.Repositories.ListContents(context.Background(), owner, repo, path, nil)
+func (c *GithubClient) ListRepoContents(owner, repo, path string) []*github.RepositoryContent {
+	file, dir, _, err := c.Client.Repositories.GetContents(context.Background(), owner, repo, path, nil)
 	if err != nil {
 		return nil
 	}
-	return files
+	if file != nil {
+
+		return []*github.RepositoryContent{file}
+	}
+	return dir
 }
 
-func (c *GithubClient) GetRepoContents(owner, repo, path string) []*github.RepositoryContent {
-	contents, _, err := c.Client.Repositories.GetContents(context.Background(), owner, repo, path, nil)
+func (c *GithubClient) GetFile(owner, repo, path string) (*github.RepositoryContent, error) {
+	file, _, _, err := c.Client.Repositories.GetContents(context.Background(), owner, repo, path, nil)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	return contents
+	return file, nil
 }

@@ -1,8 +1,8 @@
 package models
 
 type FileInfo struct {
-	path string "json:'path'"
-	Type string "json:'type'"
+	Path string `json:"path"`
+	Type string `json:"type"`
 }
 type Pattern struct {
 	Name  string
@@ -13,14 +13,14 @@ type ScanResult struct {
 	Match string
 }
 type ScanRequest struct {
-	Owner string "json:'owner'"
-	Repo  string "json:'repo'"
+	Owner string `json:"owner"`
+	Repo  string `json:"repo"`
 }
 type FileContent struct {
-	Content string "json:'content'"
+	Content string `json:"content"`
 }
 type ScanResponse struct {
-	File  string "json:'file'"
-	Type  string "json:'type'"
-	Match string "json:'match'"
+	File  string `json:"file"`
+	Type  string `json:"type"`
+	Match string `json:"match"`
 }
